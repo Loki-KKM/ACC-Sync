@@ -19,7 +19,7 @@ interface UploadSession {
 export class AuthService {
   private authUrl: string = 'https://developer.api.autodesk.com/authentication/v2/authorize';
   private tokenUrl: string = 'https://developer.api.autodesk.com/authentication/v2/token';
-  private tokenStorage: Map<string, string> = new Map(); // Temporary storage
+  private tokenStorage: Map<string, string> = new Map(); 
 
   private sessions: Map<string, UploadSession> = new Map();
 
@@ -42,8 +42,8 @@ export class AuthService {
 
     const params = new URLSearchParams({
       response_type: 'code',
-      client_id: "HlgZAiBjHq7RbA9sI31HIxiBSUDHQCAg3re2A4NvHxZmb4CR",
-      redirect_uri: "http://localhost:3001/auth/callback",
+      client_id: process.env.client_id,
+      redirect_uri: process.env.redirect_uri,
       scope: 'viewables:read data:read data:write data:create data:search bucket:create bucket:read bucket:update bucket:delete',
       code_challenge: codeChallenge,
       code_challenge_method: 'S256',
@@ -64,9 +64,9 @@ export class AuthService {
 
     const data = new URLSearchParams({
       grant_type: 'authorization_code',
-      client_id: "HlgZAiBjHq7RbA9sI31HIxiBSUDHQCAg3re2A4NvHxZmb4CR",
+      client_id: process.env.client_id,
       code: authCode,
-      redirect_uri: "http://localhost:3001/auth/callback",
+      redirect_uri: process.env.redirect_uri,
       code_verifier: codeVerifier,
     });
 

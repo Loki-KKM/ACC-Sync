@@ -218,9 +218,7 @@ async initUpload(
   return result;
 }
 
-/**
- * API 2: Upload the binary file. Client sends the binary data and the sessionId (from init) as query.
- */
+
 @Post('file')
 @UseInterceptors(FileInterceptor('file'))
 async uploadFile(
