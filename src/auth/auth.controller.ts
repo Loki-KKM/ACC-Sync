@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Body, Query, Res, Session } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Res, Session,Headers, Param, BadRequestException, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Response } from 'express';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('auth')
 export class AuthController {
@@ -71,22 +72,7 @@ async getDetails(
     return res.status(500).json({ error: error.message });
   }
 }
-@Post('get-issues')
-async getissues(
-  @Body('projectId') projectId: string,
-  @Res() res: Response,
-) {
-  if (!projectId) {
-    return res.status(400).json({ error: 'Hub ID and Project ID are required' });
-  }
 
-  try {
-    const details = await this.authService.getissue(projectId);
-    return res.json(details);
-  } catch (error) {
-    return res.status(500).json({ error: error.message });
-  }
-}
 
 @Post('get-folder')
 async getfolder(
@@ -107,6 +93,7 @@ async getfolder(
   }
 }
 
+
 @Post('get-file')
 async getfolderfile(
   @Body('projectId') projectId: string,
@@ -126,6 +113,78 @@ async getfolderfile(
   }
 }
 
+
+@Post('get-issues')
+async getissues(
+  @Body('projectId') projectId: string,
+  @Res() res: Response,
+) {
+  if (!projectId) {
+    return res.status(400).json({ error: 'Hub ID and Project ID are required' });
+  }
+
+  try {
+    const details = await this.authService.getissue(projectId);
+    return res.json(details);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+}
+
+
+@Post('get-issuesType')
+async getissueType(
+  @Body('projectID') projectID: string,
+  @Res() res: Response,
+) {
+  if (!projectID) {
+    return res.status(400).json({ error: 'Hub ID and Project ID are required' });
+  }
+
+  try {
+    const details = await this.authService.getIssueType(projectID);
+    return res.json(details);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+}
+
+@Post('post-issue/:projectID')
+async addIssue(@Param('projectID') projectID: string, @Body() requestBody: any): Promise<any> {
+  try {
+    return await this.authService.addIssues(projectID, requestBody);
+  } catch (error) {
+    throw new Error(error.response?.data || 'Error creating issue');
+  }
+}
+@Post('post-submittal/:projectID')
+async addSubmittal(@Param('projectID') projectID: string, @Body() requestBody: any): Promise<any> {
+  try {
+    return await this.authService.addSubmittal(projectID, requestBody);
+  } catch (error) {
+    throw new Error(error.response?.data || 'Error creating issue');
+  }
+}
+
+@Post('get-submittal')
+async getsubmittal(
+    @Body('projectId') projectId: string,
+    @Res() res: Response,
+) {
+    if (!projectId) {
+        return res.status(400).json({ error: 'Hub ID and Project ID are required' });
+    }
+
+    try {
+        const details = await this.authService.getsubmittal(projectId);
+        return res.json(details);
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+}
+
+
+
 @Post('downloaf-file')
 async getfile(
   @Body('fileId') fileId: string,
@@ -143,5 +202,42 @@ async getfile(
     return res.status(500).json({ error: error.message });
   }
 }
+
+
+@Post('init')
+async initUpload(
+  @Body('fileName') fileName: string,
+  @Body('projectId') projectId: string,
+  @Body('folderId') folderId: string,
+  @Headers('authorization') authHeader: string,
+) {
+  if (!fileName || !projectId || !folderId) {
+    throw new BadRequestException('fileName, projectId and folderId are required');
+  }
+  const result = await this.authService.initUpload(fileName, projectId, folderId);
+  return result;
+}
+
+/**
+ * API 2: Upload the binary file. Client sends the binary data and the sessionId (from init) as query.
+ */
+@Post('file')
+@UseInterceptors(FileInterceptor('file'))
+async uploadFile(
+  @Query('sessionId') sessionId: string,
+  @UploadedFile() file: Express.Multer.File,
+  @Headers('authorization') authHeader: string,
+) {
+  if (!sessionId) {
+    throw new BadRequestException('sessionId query parameter is required');
+  }
+  if (!file) {
+    throw new BadRequestException('File is required');
+  }
+  // file.buffer contains the binary data
+  const result = await this.authService.uploadFile(sessionId, file.buffer);
+  return result;
+}
+
 
 }
